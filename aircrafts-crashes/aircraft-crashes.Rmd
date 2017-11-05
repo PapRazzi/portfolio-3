@@ -1,5 +1,5 @@
 ---
-title: "Aircraft crashes"
+title: "Exploring the main causes of aircrafts crashes since 1908"
 author: "Charles de Lassence"
 output: 
   html_document: 
