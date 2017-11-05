@@ -6,5 +6,5 @@ My objective is to work in data science within the coming years, so I completed 
 
 # Projects
 
-* [How old did kings of France reign ?](portfolio/blob/master/france-kings/kings-france.md)
-* [Exploring the main causes of aircrafts crashes since 1908](portfolio/blob/master/aircrafts-crashes/aircraft-crashes.md)
+* [How old did kings of France reign ?](france-kings/kings-france.md)
+* [Exploring the main causes of aircrafts crashes since 1908](/aircrafts-crashes/aircraft-crashes.md)
