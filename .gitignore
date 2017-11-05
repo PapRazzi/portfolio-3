@@ -20,8 +20,9 @@ cache/
 *.utf8.md
 *.knit.md
 
-# exclude folder
+# specific exclude folder and files
 exclude/
+*.html
 
 # Mac OS system files
 .DS_Store
