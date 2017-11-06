@@ -3,19 +3,19 @@ Charles de Lassence
 
 
 
+# Project
+
 I really liked FiveThirtyEight’s [visualization of the oldest persons](https://fivethirtyeight.com/features/why-the-oldest-person-in-the-world-keeps-dying/) in the world. It gives a very clear representation of how the age of the elderly increases over time, and how Jeanne Calment lived way longer than any other person. So I decided to reproduce the same type of graph in R to show the reigns’ length of every monarch in the history of France, that is 87 kings – no queen.
 
 The profusion of monarchs in the early ages – the Merovingian dynasty – is partly due to the fact that the kingdom of France was divided into several parts, leading to simultaneous kings. The life expectancy increased over time, but stayed under 45 until the Bourbons. However only 4 monarchs lived longer than 70. Two kings clearly stand out by the length of their reign: Louis XIV and his great grandson Louis XV.
 
 I scraped a [Wikipedia article](https://fr.wikipedia.org/wiki/Liste_des_monarques_de_France) as source for the data, and wrangled it to get a suitable data frame for a `ggplot2` graph.
 
-***
+# Result
 
  [![](kings-france.png)](kings-france.png)
 
-***
-
-Here is the complete code:
+# Code
 
 
 ```r
