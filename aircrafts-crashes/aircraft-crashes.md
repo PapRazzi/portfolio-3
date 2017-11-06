@@ -1,9 +1,15 @@
-# Aircraft crashes
+# Exploring the main causes of aircrafts crashes since 1908
 Charles de Lassence  
 
 
 
+# Project
+
 The goal is to try to extract the most common causes of planes crashes, by using text analysis on the context lines in the dataset. [This website](http://www.planecrashinfo.com/cause.htm) shows the actual most common causes since the 1960s. Will we find similar patterns ? 
+
+# Code
+
+## 1. Data loading and preparation
 
 
 ```r
@@ -33,8 +39,7 @@ crashes <-
 rawtxt <- VCorpus(VectorSource(crashes$Summary))
 ```
 
-Then we do some cleaning on the text, and create a Document-Term Matrix, from which we remove the most generic terms like 'aircraft' or 'crash', that would not add any value to the analysis of the causes. 
-
+Then we do some cleaning on the text, and create a Document-Term Matrix, from which we remove the most generic terms like 'aircraft' or 'crash', that would not add any value to the analysis of the causes.  
 
 
 ```r
@@ -74,7 +79,7 @@ print(dtms)
 ## Weighting          : term frequency (tf)
 ```
 
-# 1. Find clusters of words
+## 2. Find clusters of words
 
 To find frequently associated words, we first compute a distance matrix based on our reduced Document-Term Matrix, then apply K-means clustering. 
 
@@ -144,7 +149,7 @@ With this first part of the analysis, we can spot a few groups of words that are
 * incorrect altitude  
 * approach of the runway
 
-# 2. Association with most frequent terms
+## 3. Association with most frequent terms
 
 To complete this first semantic analysis, we can look at the most frequent terms, and their correlation with other terms.
 
@@ -236,4 +241,6 @@ This is quite enlightening. Let's look at some of the terms associations:
 * __Failure__: we have more context here, suggesting that it can be pilot, maintainance, procedure or system failures  
 * __Landing__: this shows that it is not necessarily about the standard landing phase, but rather about landing gears, or emergency landings   
 * __Weather__ and __Conditions__ suggest that _visibility_ is one of the most important crashes factors in bad weather
+
+# Conclusion
 
