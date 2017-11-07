@@ -11,12 +11,13 @@ The profusion of monarchs in the early ages – the Merovingian dynasty – is p
 
 I scraped a [Wikipedia article](https://fr.wikipedia.org/wiki/Liste_des_monarques_de_France) as source for the data, and wrangled it to get a suitable data frame for a `ggplot2` graph.
 
-# Result
+# Results
 
  [![](kings-france.png)](kings-france.png)
 
-# Code
+# Full Code
 
+## Data scraping
 
 ```r
 # Load libraries
@@ -26,8 +27,6 @@ library('tidyr')
 library('ggplot2')
 library('reshape2')
 library('dplyr')
-
-### Data sourcing
 
 # Source page
 page <- read_html("https://fr.wikipedia.org/wiki/Liste_des_monarques_de_France")
@@ -39,9 +38,12 @@ rawlist <-
     html_table(fill = TRUE) %>%
     lapply(as.data.frame) %>% 
     bind_rows()
+```
 
-### Data cleaning 
+## Data cleaning
 
+
+```r
 # Remove nicknames
 rawlist[, 2] <- 
     rawlist[, 2] %>%
@@ -85,8 +87,25 @@ rawlist[grep("Napoléon Ier", rawlist$Name), "Name"][1] <- "Napoléon Ier (nolab
 # Order levels by date, for the graph
 rawlist$Name <- reorder(rawlist$Name, -rawlist$Until)
 
-### Graph 
+# Midpoint check
+head(rawlist)
+```
 
+```
+##               Name Birth Death From Until      Dynasty
+## 1     Clovis Ier\n   466   511  481   511 Merovingians
+## 2       Clodomir\n   495   524  511   524 Merovingians
+## 3    Thierry Ier\n   485   534  511   534 Merovingians
+## 4    Thibert Ier\n   504   548  534   548 Merovingians
+## 5        Thibaut\n   535   555  548   555 Merovingians
+## 6 Childebert Ier\n   497   558  511   558 Merovingians
+```
+
+
+## Build graph
+
+
+```r
 # Melt data, and compute the age at beginning and end of reign
 kingslist <- 
     rawlist %>%
@@ -144,6 +163,9 @@ graph <-
                  linetype = 2) +
     guides(alpha = "none")
 
+# Plot the result
 plot(graph)
 ```
+
+![](kings-france_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
 

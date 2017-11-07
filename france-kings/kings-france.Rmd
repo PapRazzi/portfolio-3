@@ -4,10 +4,13 @@ author: "Charles de Lassence"
 output: 
   html_document: 
     keep_md: yes
+    number_sections: yes
+    toc: yes
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(message = FALSE)
+options(knitr.table.format = 'markdown')
 ```
 
 # Project
@@ -22,9 +25,10 @@ I scraped a [Wikipedia article](https://fr.wikipedia.org/wiki/Liste_des_monarque
 
  [![](kings-france.png)](kings-france.png)
 
-# Code
+# Full Code
 
-```{r, eval=FALSE}
+## Data scraping
+```{r}
 # Load libraries
 library('rvest')
 library('stringr')
@@ -32,8 +36,6 @@ library('tidyr')
 library('ggplot2')
 library('reshape2')
 library('dplyr')
-
-### Data sourcing
 
 # Source page
 page <- read_html("https://fr.wikipedia.org/wiki/Liste_des_monarques_de_France")
@@ -45,9 +47,11 @@ rawlist <-
     html_table(fill = TRUE) %>%
     lapply(as.data.frame) %>% 
     bind_rows()
+```
 
-### Data cleaning 
+## Data cleaning
 
+```{r}
 # Remove nicknames
 rawlist[, 2] <- 
     rawlist[, 2] %>%
@@ -91,8 +95,14 @@ rawlist[grep("Napoléon Ier", rawlist$Name), "Name"][1] <- "Napoléon Ier (nolab
 # Order levels by date, for the graph
 rawlist$Name <- reorder(rawlist$Name, -rawlist$Until)
 
-### Building graph 
+# Midpoint check
+head(rawlist)
+```
 
+
+## Build graph
+
+```{r, fig.width=10}
 # Melt data, and compute the age at beginning and end of reign
 kingslist <- 
     rawlist %>%
@@ -150,6 +160,7 @@ graph <-
                  linetype = 2) +
     guides(alpha = "none")
 
+# Plot the result
 plot(graph)
 ```
 
