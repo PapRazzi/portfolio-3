@@ -1,18 +1,18 @@
-# Public Wifi in Paris: who is using it ?
+# Public Wifi in Paris: how touristic is the city ?
 Charles de Lassence  
 
 # Project
 
-The city of Paris has released a dataset containing a list of all connections made in 2016 on the ~300 public wifi hotspots, available on their [open data website](https://opendata.paris.fr/explore/dataset/utilisations_mensuelles_des_hotspots_paris_wi-fi/information/). The dataset is 1.7M rows long, and features a number of interesting information for each session such as time, volume downloaded/uploaded, device, browser, OS and language. I have explored this dataset to infer who is using public wifi and find insights about behaviours and equipment.
+The city of Paris has released a dataset containing a list of all connections made in 2016 on the ~300 public wifi hotspots, available on their [open data website](https://opendata.paris.fr/explore/dataset/utilisations_mensuelles_des_hotspots_paris_wi-fi/information/). The dataset is 1.7M rows long, and features a number of interesting information for each session such as time, volume downloaded/uploaded, device, browser, OS and language. I have explored this dataset to see how much touristics Paris is, and find insights about most frequented places, top countries and languages, and preferred equipment.
 
 # Results
 
 Some of the key insights of the analysis include:   
 
 * The most used hotspot is at the Notre-Dame cathedral   
-* 67% of all connections are made through Mobile/Tablet  
-* Apple devices represents 38% of connections   
 * French is less than half of the devices language, and is not #1 in the most touristic areas. 
+* 67% of all connections are made through Mobile/Tablet, and more than 90% in touristic places   
+* Apple is by far the preferred brand in almost all countries    
 
 ![](wifi-paris_files/figure-html/unnamed-chunk-16-1.png)
 
@@ -397,24 +397,24 @@ table.device_type <-
     arrange(mobile_pct)
 
 rbind(head(table.device_type, 5), c("...", "...", "..."), tail(table.device_type, 5)) %>%
-    kable(col.names = c("Site", "Connections", "Mobile share"))
+    kable(col.names = c("Site", "Connections", "Mobile Share %"))
 ```
 
 
 
-|Site                                         |Connections |Mobile share |
-|:--------------------------------------------|:-----------|:------------|
-|Bibliothèque Historique de la Ville de Paris |6978        |20.9         |
-|Médiathèque Marguerite Duras                 |9421        |34           |
-|Bibliothèque Yourcenar                       |12378       |38.5         |
-|Maison Initiatives Etudiantes                |7760        |40.2         |
-|Bibliothèque Trocadero                       |5128        |41.1         |
-|...                                          |...         |...          |
-|Berges de Seine Rive Gauche - Solferino      |5889        |93.7         |
-|Parc Champs de Mars                          |30468       |93.9         |
-|Square Louis XIII                            |28964       |94.3         |
-|Square Jean XXIII                            |86610       |94.5         |
-|Parvis de L'Hôtel de Ville (9_place)         |5309        |94.6         |
+|Site                                         |Connections |Mobile Share % |
+|:--------------------------------------------|:-----------|:--------------|
+|Bibliothèque Historique de la Ville de Paris |6978        |20.9           |
+|Médiathèque Marguerite Duras                 |9421        |34             |
+|Bibliothèque Yourcenar                       |12378       |38.5           |
+|Maison Initiatives Etudiantes                |7760        |40.2           |
+|Bibliothèque Trocadero                       |5128        |41.1           |
+|...                                          |...         |...            |
+|Berges de Seine Rive Gauche - Solferino      |5889        |93.7           |
+|Parc Champs de Mars                          |30468       |93.9           |
+|Square Louis XIII                            |28964       |94.3           |
+|Square Jean XXIII                            |86610       |94.5           |
+|Parvis de L'Hôtel de Ville (9_place)         |5309        |94.6           |
 
 Unsurprinsingly, libraries and other studying places have the highest computer usage, while touristic areas have almost exclusive mobile usage.  
 
@@ -461,9 +461,9 @@ wifi %>%
 |Microsoft |Mobile/Tablet |     0.6|
 |Asus      |Mobile/Tablet |     0.5|
 
-Apple is clearly leading with 38% share of devices on mobile and computers, followed by Samsung. All other brands are below 2%.
+Apple is clearly leading with 38% overall share of devices on mobile and computers, followed by Samsung. All other brands are below 2%.
 
-Are there significant differences depending on the country ? We can look at the top brands on the 10 most frequent country, and see that Apple and Samsung are consistently the first 2 brands (except for Apple on Arab Emirates devices, for some reason that I couldn't explain otherwise than data corruption), while the third brand has higher variability but a much smaller share of market.
+Are there significant differences depending on the country ? We can look at the top brands on the 10 most frequent country, and see that Apple and Samsung are consistently the first 2 brands (except for Apple on Arab Emirates devices, for some reason that I couldn't explain otherwise than data corruption), while the 3rd brand has higher variability but a much smaller share of market.
 
 
 ```r
