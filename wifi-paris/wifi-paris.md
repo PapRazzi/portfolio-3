@@ -1,43 +1,69 @@
-# Wifi Paris Analysis for Year 2016
+# Public Wifi in Paris: who is using it ?
 Charles de Lassence  
 
 # Project
 
-The city of Paris has released a dataset containing a list of all connections made in 2016 on the ~300 public wifi hotspots, available on their [open data website](https://opendata.paris.fr/explore/dataset/utilisations_mensuelles_des_hotspots_paris_wi-fi/information/). I have explored this dataset to find insights about connection behaviours, and to infer 
-
+The city of Paris has released a dataset containing a list of all connections made in 2016 on the ~300 public wifi hotspots, available on their [open data website](https://opendata.paris.fr/explore/dataset/utilisations_mensuelles_des_hotspots_paris_wi-fi/information/). The dataset is 1.7M rows long, and features a number of interesting information for each session such as time, volume downloaded/uploaded, device, browser, OS and language. I have explored this dataset to infer who is using public wifi and find insights about behaviours and equipment.
 
 # Results
 
+Some of the key insights of the analysis include:   
 
-# Code
+* The most used hotspot is at the Notre-Dame cathedral   
+* 67% of all connections are made through Mobile/Tablet  
+* Apple devices represents 38% of connections   
+* French is less than half of the devices language, and is not #1 in the most touristic areas. 
 
-## Preparing data
+![](wifi-paris_files/figure-html/unnamed-chunk-16-1.png)
+
+
+# Full Code
+
+## Preparing the data
 
 ### Setup and libraries
 
 
 
+We will several of the standard *tidyverse* libraries for data wrangling and plotting. For the maps, we will also be using the *ggmap* package. 
+
 
 ```r
 library("tidyverse")
 library("stringr")
-library("corrplot")
-library("ggmap")
 library("lubridate")
+library("ggmap")
 library("knitr")
 ```
 
 ### Load and format main file
 
+
 ```r
-wifi.raw <- read_delim("./wifi-data-2016.csv",
-                       delim = ";", na = c("NULL", ""), col_types = "ccnnnccccc",
-                       progress = FALSE)
+wifi.raw <- read_delim("./wifi-data-2016.csv", progress = FALSE,
+                       delim = ";", na = c("NULL", ""), col_types = "ccnnnccccc")
+
+glimpse(wifi.raw)
+```
+
+```
+## Observations: 1,668,609
+## Variables: 10
+## $ start_time    <chr> "2016-05-27T20:38:00+02:00", "2016-05-27T20:34:0...
+## $ stop_time     <chr> "2016-05-27T21:00:00+02:00", NA, "2016-05-27T21:...
+## $ duration      <dbl> 1075, 302, 2525, 1164, 2102, 1050, 1570, 4501, 9...
+## $ input_octets  <dbl> 3487928, 1586655, 175261111, 2443957, 4681103, 8...
+## $ output_octets <dbl> 638911, 321442, 13506281, 144435, 583246, 251518...
+## $ os            <chr> "Mac OS X", "Android", "iOS", "iOS", "iOS", "And...
+## $ browser       <chr> "AppleMail", "Android", "Mobile Safari UIWebView...
+## $ device        <chr> "Other", "Samsung GT-S5369-ORANGE/S5369BVL", "iP...
+## $ langue        <chr> "fr_FR", "fr_FR", "fr_FR", "en_US", "fr_FR", NA,...
+## $ site          <chr> "Centre d'Animation Espace Beaujon", "Jardin Gar...
 ```
 
 
 ```r
-wifi.2 <- 
+wifi <- 
     wifi.raw %>%
     mutate(start_time = as_datetime(str_replace(start_time, "T", " ")),
            stop_time = as_datetime(str_replace(stop_time, "T", " "))) %>%
@@ -49,18 +75,11 @@ wifi.2 <-
     arrange(start_time)
 ```
 
+### Add new features
 
-```r
-wifi <- wifi.2
-```
+In order to improve our analysis, we can compute and add new features based on the current information we have.  
 
-
-### Adding new features
-
-We will compute new features based on the current information we have, in order
-to improve our analysis.  
-
-First, let's simplify all OS into fewer, clean categories
+First, let's simplify all OS into fewer, clean categories:
 
 
 ```r
@@ -77,7 +96,7 @@ wifi <-
            )
 ```
 
-Then, let's extract the device brand, based on the OS (for Apple), or the full device name.
+Then, let's extract the device brand, based on the OS (for Apple), or the full device name:
 
 
 ```r
@@ -94,7 +113,7 @@ wifi <-
            )
 ```
 
-Finally, let's guess if the device is a Computer or a Mobile/Tablet
+Finally, let's try to guess if the device is a Computer or a Mobile/Tablet:
 
 
 ```r
@@ -119,7 +138,7 @@ wifi$device_type[wifi$device_type == ""] <- NA
 
 ### Join with map of hotspots
 
-As the location of the hotspots is in a different source, we need to join it with our main dataframe. But we first have to do some cleaning on the names of the sites, that are sometimes misspelled.
+As the location of the hotspots is in a different source, we need to join it with our main dataframe. However, even after having done some cleaning on the names of the sites, there were still inconsistencies due to incorrectly spelled site names. So I had to finish the match table manually in a spreadsheet, which I import below as a csv file:
 
 
 ```r
@@ -155,15 +174,24 @@ wifi <-
     rename(site = site_clean)
 ```
 
+
 ## Analysis
+
+Now let's jump into the fun part. We will try to answer five questions:  
+
+1. What is the most popular hotspot ?  
+2. Is French the most frequent language on devices ?  
+3. When do people connect the most ?  
+4. What is the proportion of mobile vs computers ?  
+5. What is the most popular device brand ?
 
 ### Most popular hotspots
 
-Let's first look at the most used hotspots, in terms of number of connections and output volume (in Mo).
+Let's take a first look at the most used hotspots, in terms of number of connections and output volume (in Mo).
 
 
 ```r
-graph_popular <- 
+graph.popular <- 
     wifi %>% 
     filter(!is.na(site_id)) %>%
     group_by(site_id, site) %>% 
@@ -173,32 +201,32 @@ graph_popular <-
     left_join(wifi.corresp) %>%
     ungroup()
 
-graph_popular %>%
+graph.popular %>%
     select(site, connections, avg_volume) %>%
     head(10) %>%
-    kable(col.names = c("Site", "Connections", "Average volume (Mo)"),
-          digits = 2)
+    kable(col.names = c("Site", "Connections", "Average Volume (Mo)"),
+          digits = 2, row.names = TRUE)
 ```
 
 
 
-Site                                            Connections   Average volume (Mo)
----------------------------------------------  ------------  --------------------
-Square Jean XXIII                                     91691                  3.85
-Centre d'Accueil Kellermann                           45496                  7.04
-Berges de Seine Rive Gauche - Gros Caillou            40797                  2.88
-Jardin d'Eole 1                                       38778                  5.72
-Bibliothèque Historique de la Ville de Paris          33443                  5.17
-Parc Champs de Mars                                   32459                  3.55
-Bibliothèque Yourcenar                                32134                  4.49
-Square Louis XIII                                     30718                  2.60
-Médiathèque Marguerite Duras                          27730                  4.16
-Parc Monceau 1 (Entrée)                               23743                  3.60
+|   |Site                                         | Connections| Average Volume (Mo)|
+|:--|:--------------------------------------------|-----------:|-------------------:|
+|1  |Square Jean XXIII                            |       91691|                3.85|
+|2  |Centre d'Accueil Kellermann                  |       45496|                7.04|
+|3  |Berges de Seine Rive Gauche - Gros Caillou   |       40797|                2.88|
+|4  |Jardin d'Eole 1                              |       38778|                5.72|
+|5  |Bibliothèque Historique de la Ville de Paris |       33443|                5.17|
+|6  |Parc Champs de Mars                          |       32459|                3.55|
+|7  |Bibliothèque Yourcenar                       |       32134|                4.49|
+|8  |Square Louis XIII                            |       30718|                2.60|
+|9  |Médiathèque Marguerite Duras                 |       27730|                4.16|
+|10 |Parc Monceau 1 (Entrée)                      |       23743|                3.60|
 
 
-The most popular hotspot is the square just behind the Notre-Dame cathedral, which is a very touristic area, so this result does not come as a surprise. 
+The most popular hotspot by far is the square just behind the Notre-Dame cathedral, which is a very touristic area, so this result does not come as a surprise. Hotspots 3, 6 and 8 are also places with high tourist frequentation. Compared to the other hotspots, the average output volume per session is lower, which makes sense as the latter are probably more used for work.  
 
-We can draw the full results on a map.
+We can plot a map of all hotspots and their number of connections. I customized the Google Map style using the [dedicated tool](https://mapstyle.withgoogle.com/).
 
 
 ```r
@@ -216,49 +244,50 @@ googlemap.graph <-
 ```r
 # Plot hotspots by volume
 ggmap(googlemap.graph) + theme_void() +
-      geom_point(data = graph_popular, colour = "yellow",
+      geom_point(data = graph.popular, colour = "yellow",
                  aes(x = site_geo_x, y = site_geo_y, size = connections, 
                      alpha = avg_volume))
 ```
 
-![](wifi-paris_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
-
-
-
+![](wifi-paris_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
 
 ### Top languages
 
+Let's know look at the most popular languages based on the device information:
+
+
 ```r
 # Top 10 languages
-wifi %>%
+graph.languages <-    
+    wifi %>%
     group_by(language) %>%
     summarise(percent = n() / nrow(wifi) * 100) %>%
     arrange(desc(percent)) %>%
     filter(!is.na(language)) %>%
-    top_n(10) %>%
-    kable(col.names = c("Language", "Share %"), digits = 1)
+    top_n(10)
 ```
 
 
+```r
+ggplot(graph.languages, aes(reorder(language, percent), percent)) +
+    geom_col() + 
+    geom_text(aes(label = paste(round(percent, 1), "%")), 
+              nudge_y = 0.5, hjust = "left") +
+    coord_flip() +
+    theme(panel.grid = element_blank()) +
+    ylim(0, 50) +
+    labs(y = "Share %", x = "Device Language") 
+```
 
-Language    Share %
----------  --------
-fr             46.0
-en             15.1
-es              3.2
-it              1.8
-de              1.5
-ar              1.3
-pt              1.3
-ru              1.1
-zh              1.0
-nl              0.8
+![](wifi-paris_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
 
-French represents only less than half of the connections on public wifi, followed by English. 
+French represents less than half of the sessions on public wifi, followed by English. As UK and US citizens are the 2nd and 3rd among foreign visitors in Paris, this is consistent. Spanish and Germans are also within the top 5 nationalities visiting Paris. 
+
+We can now plot a map showing the most used language by hotspot. While most are French, a number of very touristic areas have more English devices. There is also one hotspot where the most frequent language is Arabic.
 
 
 ```r
-graph_language <-
+graph.language <-
     wifi %>%
     filter(!is.na(site_id)) %>%
     group_by(site_id, language) %>%
@@ -276,86 +305,68 @@ graph_language <-
 
 ```r
 ggmap(googlemap.graph) + theme_void() +
-    geom_point(data = graph_language,
+    geom_point(data = graph.language,
                aes(x = site_geo_x, y = site_geo_y, size = connections,
                    colour = language, alpha = lang_pct))
 ```
 
-![](wifi-paris_files/figure-html/unnamed-chunk-17-1.png)<!-- -->
+![](wifi-paris_files/figure-html/unnamed-chunk-16-1.png)<!-- -->
 
-The map above shows the most used language by hotspot. While most are French, a number of mostly touristic areas have more devices set to English. There is also one hotspot (in the 18th district) where the most frequent language is Arabic.
+If we zoom in on locations where French is not the most frequent language, we can confirm our assumption about highly touristic areas:  
 
 
 ```r
-graph_language %>%
+graph.language %>%
     ungroup() %>%
     filter(language != "fr", total_count > 5000) %>%
     arrange(desc(total_count)) %>%
     transmute(site, language, lang_pct * 100, total_count) %>%
-    kable(col.names = c("Site", "Language", "Language Share %", "Site Connections"))
+    kable(col.names = c("Site", "Language #1", "Share %", "Connections"),
+          row.names = TRUE)
 ```
 
 
 
-Site                                         Language    Language Share %   Site Connections
--------------------------------------------  ---------  -----------------  -----------------
-Square Jean XXIII                            en                     39.12              91691
-Berges de Seine Rive Gauche - Gros Caillou   en                     29.69              40797
-Jardin d'Eole 1                              ar                     38.64              38778
-Parc Champs de Mars                          en                     34.79              32459
-Square Louis XIII                            en                     30.85              30718
-Square Rene Viviani                          en                     42.92              19583
-Musee du Petit Palais                        en                     37.09              18692
-Parvis de L'Hôtel de Ville (Seine)           en                     30.88              10203
-Jardin d'Eole 2                              en                     42.00               8276
-Berges de Seine Rive Gauche - Solferino      en                     37.69               6286
+|   |Site                                       |Language #1 | Share %| Connections|
+|:--|:------------------------------------------|:-----------|-------:|-----------:|
+|1  |Square Jean XXIII                          |en          |   39.12|       91691|
+|2  |Berges de Seine Rive Gauche - Gros Caillou |en          |   29.69|       40797|
+|3  |Jardin d'Eole 1                            |ar          |   38.64|       38778|
+|4  |Parc Champs de Mars                        |en          |   34.79|       32459|
+|5  |Square Louis XIII                          |en          |   30.85|       30718|
+|6  |Square Rene Viviani                        |en          |   42.92|       19583|
+|7  |Musee du Petit Palais                      |en          |   37.09|       18692|
+|8  |Parvis de L'Hôtel de Ville (Seine)         |en          |   30.88|       10203|
+|9  |Jardin d'Eole 2                            |en          |   42.00|        8276|
+|10 |Berges de Seine Rive Gauche - Solferino    |en          |   37.69|        6286|
 
-### Connections per day and hour
+### Connections per day
 
-
-```r
-# Weekday and hour
-graph_weekday_hour <-
-    wifi %>%
-    mutate(weekday = wday(start_time, label = TRUE),
-           hour = hour(start_time)) %>%
-    group_by(weekday, hour) %>%
-    summarise(connections = n())
-```
+We can start by looking at patterns in connections through the whole year, with a grid plot by day.
 
 
 ```r
-ggplot(graph_weekday_hour, aes(hour, weekday, fill = connections)) +
-    geom_tile() +
-    # coord_polar(theta = "y") +
-    scale_fill_distiller(palette = "Blues", direction = 1)
-```
-
-![](wifi-paris_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
-
-Looking at the number of connections per weekday and hour, we see a classic pattern during daytime. However there is a strange drop of connections on Monday, that we wouldn't expect.
-
-
-```r
-# Every day of the year
-graph_dayofyear <-
+graph.dayofyear <-
     wifi %>%
     mutate(day = day(start_time),
-           month = month(start_time, label = TRUE)) %>%
+           month = month(start_time)) %>%
     group_by(month, day) %>%
     summarise(connections = n())
 ```
 
 
 ```r
-ggplot(graph_dayofyear, aes(day, month)) +
+ggplot(graph.dayofyear, aes(factor(day), reorder(month, -month))) +
     geom_raster(aes(fill = connections)) +
-    scale_fill_distiller(palette = "Blues", direction = 1)
+    scale_fill_distiller(palette = "Blues", direction = 1) +
+    labs(x = "Day of month", y = "Month")
 ```
 
-![](wifi-paris_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
+![](wifi-paris_files/figure-html/unnamed-chunk-19-1.png)<!-- -->
 
-When we plot the same figures by day of the year 2016, we see that there is a problem in the data: no connections have been recorded on the first 3 days of April through March, while there is are much more connections on 4-12 Janury to March. There is obviously a mixup in the dates, months and days have probably been inverted for 1-3 April to 1-3 December.  
+It appears that there is a problem in the data: no connections have been recorded for the first 3 days of April through December, while there is are much more connections on 4-12 Janury to March. There is obviously a mixup in the dates, months and days have probably been inverted for the first 3 days of each month.  
+
+Given that the date-times are not reliable in this dataset, I will not go further in the analysis by day and hour.
 
 ### Mobile vs Computer
 
@@ -364,10 +375,9 @@ But where do people use mobiles/tablets and computers the most ?
 
 
 ```r
-graph_device_type <-
+graph.device_type <-
     wifi %>%
     filter(!is.na(site_id)) %>%
-    # filter(device_type %in% c("Mobile/Tablet", "Computer")) %>%
     group_by(site_id, device_type) %>%
     summarise(connections = n()) %>%
     mutate(mobile_pct = connections / sum(connections)) %>%
@@ -379,75 +389,47 @@ graph_device_type <-
 
 
 ```r
-graph_device_type %>%
+table.device_type <-
+    graph.device_type %>%
     select(site, connections, mobile_pct) %>%
-    mutate(mobile_pct = mobile_pct * 100) %>%
+    mutate(mobile_pct = round(mobile_pct * 100, 1)) %>%
     filter(connections > 5000) %>%
-    arrange(desc(mobile_pct)) %>%
-    head(10) %>% 
-    kable(col.names = c("Site", "Connections", "Mobile share"),
-          digits = 1, caption = "Hotspots with high Mobile/Tablet share")
+    arrange(mobile_pct)
+
+rbind(head(table.device_type, 5), c("...", "...", "..."), tail(table.device_type, 5)) %>%
+    kable(col.names = c("Site", "Connections", "Mobile share"))
 ```
 
 
 
-Table: Hotspots with high Mobile/Tablet share
+|Site                                         |Connections |Mobile share |
+|:--------------------------------------------|:-----------|:------------|
+|Bibliothèque Historique de la Ville de Paris |6978        |20.9         |
+|Médiathèque Marguerite Duras                 |9421        |34           |
+|Bibliothèque Yourcenar                       |12378       |38.5         |
+|Maison Initiatives Etudiantes                |7760        |40.2         |
+|Bibliothèque Trocadero                       |5128        |41.1         |
+|...                                          |...         |...          |
+|Berges de Seine Rive Gauche - Solferino      |5889        |93.7         |
+|Parc Champs de Mars                          |30468       |93.9         |
+|Square Louis XIII                            |28964       |94.3         |
+|Square Jean XXIII                            |86610       |94.5         |
+|Parvis de L'Hôtel de Ville (9_place)         |5309        |94.6         |
 
-Site                                          Connections   Mobile share
--------------------------------------------  ------------  -------------
-Parvis de L'Hôtel de Ville (9_place)                 5309           94.6
-Square Jean XXIII                                   86610           94.5
-Square Louis XIII                                   28964           94.3
-Parc Champs de Mars                                 30468           93.9
-Berges de Seine Rive Gauche - Solferino              5889           93.7
-Square Rene Viviani                                 18345           93.7
-Berges de Seine Rive Gauche - Gros Caillou          37985           93.1
-Jardin d'acclimatation                               7982           92.9
-Place de la république coté Ouest                    9342           92.2
-Musee du Petit Palais                               17150           91.8
+Unsurprinsingly, libraries and other studying places have the highest computer usage, while touristic areas have almost exclusive mobile usage.  
 
-
-
-```r
-graph_device_type %>%
-    select(site, connections, mobile_pct) %>%
-    mutate(mobile_pct = mobile_pct * 100) %>%
-    filter(connections > 5000) %>%
-    arrange(mobile_pct) %>%
-    head(10) %>%
-    kable(col.names = c("Site", "Connections", "Mobile share"),
-          digits = 1, caption = "Hotspots with high Computer share")
-```
-
-
-
-Table: Hotspots with high Computer share
-
-Site                                            Connections   Mobile share
----------------------------------------------  ------------  -------------
-Bibliothèque Historique de la Ville de Paris           6978           20.9
-Médiathèque Marguerite Duras                           9421           34.0
-Bibliothèque Yourcenar                                12378           38.5
-Maison Initiatives Etudiantes                          7760           40.2
-Bibliothèque Trocadero                                 5128           41.1
-Bibliothèque Francois Truffaut                         6257           44.5
-Mediatheque Francoise Sagan 1 sur 2                    8506           44.7
-Bibliothèque Jean Pierre Melville                      9501           45.0
-Hôtel de Ville 4 (3eme etage)                          7321           45.4
-Bibliothèque Vaclav Havel                              6130           53.2
-
-Let's recap this on a map, with the color indicating if the hotspot is used more by Mobiles or Computers.
+Let's recap this on a map, with a color indicating if the hotspot is used more by Mobiles or Computers.
 
 
 ```r
 ggmap(googlemap.graph) + theme_void() +
-      geom_point(data = graph_device_type,
+      geom_point(data = graph.device_type,
                  aes(x = site_geo_x, y = site_geo_y, size = connections,
                      colour = mobile_pct), alpha = 0.5) +
       scale_colour_distiller(type = "div", palette = 4)
 ```
 
-![](wifi-paris_files/figure-html/unnamed-chunk-26-1.png)<!-- -->
+![](wifi-paris_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
 
 ### Preferred brands
 
@@ -455,30 +437,69 @@ Note that about 27% of connections do not have a country indication from the dev
 
 
 ```r
-graph_device_brands <-
-    wifi %>%
+wifi %>%
     group_by(device_brand, device_type) %>%
     summarise(percent = (n() / nrow(wifi)) * 100) %>%
     arrange(desc(percent)) %>% 
-    filter(!is.na(device_brand) & !is.na(device_type))
-
-kable(head(graph_device_brands, 10), digits = 1,
-      col.names = c("Brand", "Device Type", "Share %"))
+    filter(!is.na(device_brand) & !is.na(device_type)) %>%
+    head(10) %>%
+    kable(digits = 1, col.names = c("Brand", "Device Type", "Share %"))
 ```
 
 
 
-Brand       Device Type      Share %
-----------  --------------  --------
-Apple       Mobile/Tablet       28.7
-Samsung     Mobile/Tablet       17.3
-Apple       Computer             9.3
-Lg          Mobile/Tablet        1.2
-Lumia       Mobile/Tablet        1.1
-Htc         Mobile/Tablet        0.9
-Generic     Mobile/Tablet        0.8
-Huawei      Mobile/Tablet        0.8
-Microsoft   Mobile/Tablet        0.6
-Asus        Mobile/Tablet        0.5
+|Brand     |Device Type   | Share %|
+|:---------|:-------------|-------:|
+|Apple     |Mobile/Tablet |    28.7|
+|Samsung   |Mobile/Tablet |    17.3|
+|Apple     |Computer      |     9.3|
+|Lg        |Mobile/Tablet |     1.2|
+|Lumia     |Mobile/Tablet |     1.1|
+|Htc       |Mobile/Tablet |     0.9|
+|Generic   |Mobile/Tablet |     0.8|
+|Huawei    |Mobile/Tablet |     0.8|
+|Microsoft |Mobile/Tablet |     0.6|
+|Asus      |Mobile/Tablet |     0.5|
 
-Apple is clearly leading the way, with 28% share of devices, both mobile and computers, followed by Samsung. All other brands are below 2%.
+Apple is clearly leading with 38% share of devices on mobile and computers, followed by Samsung. All other brands are below 2%.
+
+Are there significant differences depending on the country ? We can look at the top brands on the 10 most frequent country, and see that Apple and Samsung are consistently the first 2 brands (except for Apple on Arab Emirates devices, for some reason that I couldn't explain otherwise than data corruption), while the third brand has higher variability but a much smaller share of market.
+
+
+```r
+wifi %>%
+    group_by(country, device_brand) %>%
+    summarise(count = n()) %>%
+    filter(!is.na(device_brand), !is.na(country)) %>%
+    ungroup() %>%
+    group_by(country) %>%
+    mutate(country_total = sum(count),
+           percent = count / country_total * 100) %>%
+    arrange(desc(country_total), desc(percent)) %>%
+    top_n(3) %>%
+    mutate(rank = row_number(-percent),
+           device_brand = paste(device_brand, "-", round(percent, 1), "%")) %>%
+    head(30) %>%
+    select(country, country_total, device_brand, rank) %>%
+    spread(rank, device_brand) %>%
+    arrange(desc(country_total)) %>%
+    select(-country_total) %>%
+    kable(col.names = c("Country", "Brand #1", "Brand #2", "Brand #3"))
+```
+
+
+
+|Country |Brand #1         |Brand #2          |Brand #3        |
+|:-------|:----------------|:-----------------|:---------------|
+|FR      |Apple - 59.4 %   |Samsung - 25.7 %  |Lumia - 1.9 %   |
+|US      |Apple - 74.9 %   |Samsung - 15.1 %  |Nexus - 1.5 %   |
+|GB      |Apple - 43.7 %   |Samsung - 38.6 %  |Lg - 2.4 %      |
+|ES      |Apple - 57.4 %   |Samsung - 22.9 %  |Aquaris - 4.3 % |
+|IT      |Apple - 52.4 %   |Samsung - 24.8 %  |Lumia - 4.1 %   |
+|DE      |Apple - 55.9 %   |Samsung - 26.9 %  |Htc - 4 %       |
+|BR      |Apple - 67.2 %   |Samsung - 22.9 %  |Lg - 3.4 %      |
+|CA      |Apple - 71 %     |Samsung - 17 %    |Lg - 4.1 %      |
+|CN      |Apple - 79.3 %   |Samsung - 6.9 %   |Huawei - 4.3 %  |
+|AE      |Samsung - 99.3 % |Microsoft - 0.4 % |Lumia - 0.2 %   |
+
+

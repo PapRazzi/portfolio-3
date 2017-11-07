@@ -26,3 +26,5 @@ exclude/
 
 # Mac OS system files
 .DS_Store
+
+wifi-paris/wifi-data-2016.csv
