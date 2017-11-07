@@ -15,11 +15,11 @@ options(knitr.table.format = 'markdown')
 
 # Project
 
-Kaggle published a [dataset](https://www.kaggle.com/saurograndi/airplane-crashes-since-1908) collecting the full history of airplane crashes throughout the world from 1908 to present, i.e. more than 5200 crashes leading to 100K deaths. I conducted a text analysis on the context description lines of this dataset, in order to extract the most common causes of planes crashes. 
+Kaggle published a [dataset](https://www.kaggle.com/saurograndi/airplane-crashes-since-1908) collecting the full history of airplane crashes throughout the world from 1908 to present, i.e. more than 5200 crashes leading to 100K+ deaths. I conducted a text analysis on the description lines of this dataset, in order to extract the most common causes of planes crashes. 
 
 # Results
 
-We find that the main causes of crashes are: pilot, engine failure and weather. We also found some context indicating that the approach/landing phase is probably the most dangerous. These results actually concur with the official analysis of the most frequent [causes of crashes](http://www.planecrashinfo.com/cause.htm).
+The analysis suggested that the main causes of crashes are: pilot, engine failure and weather. We also found some context indicating that the approach/landing phases are the most dangerous. These results actually concur with the official analysis of the most frequent [causes of crashes](http://www.planecrashinfo.com/cause.htm).
 
 # Full Code
 
