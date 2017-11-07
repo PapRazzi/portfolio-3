@@ -100,7 +100,7 @@ head(rawlist)
 ```
 
 
-## Build graph
+## Building graph
 
 ```{r, fig.width=10}
 # Melt data, and compute the age at beginning and end of reign
