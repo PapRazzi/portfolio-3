@@ -6,5 +6,6 @@ My objective is to shift from analyst to plain Data Scientist, so I did a lot of
 
 # Projects
 
+* [Public Wifi in Paris: how touristic is the city ?](wifi-paris/wifi-paris.md)
 * [How old did kings of France reign ?](france-kings/kings-france.md)
 * [Exploring the main causes of aircrafts crashes since 1908](/aircrafts-crashes/aircraft-crashes.md)
