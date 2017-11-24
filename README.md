@@ -8,3 +8,4 @@ This is my book of experiments in data science. I am currently working as Busine
 * [Mapping 4 years of my Google location history](location-history/location-history.md)
 * [How old did kings of France reign ?](france-kings/kings-france.md)
 * [Exploring the main causes of aircrafts crashes since 1908](/aircrafts-crashes/aircraft-crashes.md)
+* [Almost 50% of Paris Vélib stations are now closed](/velib-stations/Paris%20Velib%20open%20stations.ipynb)
